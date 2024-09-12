@@ -1,50 +1,110 @@
-# Welcome to your Expo app 👋
+# ToDo App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A simple, yet powerful, cross-platform ToDo application built with **React Native** and **Firebase**. The app allows users to create lists of tasks, mark tasks as done, edit tasks, and delete them with ease. It supports both light and dark mode, and remembers the user's preference. This app works on both mobile devices (via Expo Go) and the web (via React Native for Web).
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Create Lists**: Users can create multiple task lists to organize their tasks.
+- **Add Tasks**: Add new tasks to each list and keep track of your to-dos.
+- **Mark Tasks as Done**: Mark tasks as completed by tapping the round check button.
+- **Edit Tasks**: Edit the text of existing tasks.
+- **Delete Tasks**: Delete tasks by tapping the trash icon, followed by a confirmation.
+- **Light/Dark Mode**: Toggle between light and dark themes, and the app remembers your theme preference.
+- **Persistent Data**: All lists and tasks are saved in **Firebase Firestore**, ensuring they persist across sessions.
 
-   ```bash
-   npm install
-   ```
+## Tech Stack
 
-2. Start the app
+- **React Native**: For building the mobile and web application.
+- **Expo**: To manage development and deployment across platforms.
+- **Firebase Firestore**: For real-time data storage and synchronization.
+- **AsyncStorage**: For persisting theme preferences on mobile devices.
+- **React Native Web**: For web support using React Native components.
 
-   ```bash
-    npx expo start
-   ```
+## Screenshots
 
-In the output, you'll find options to open the app in a
+## Screenshots
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+![App Screenshots](assets/images/screenshot.jpg)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+## Installation
 
-When you're ready, run:
+To get started with the app on your local machine, follow these steps:
+
+### Prerequisites
+
+- Node.js installed
+- Expo CLI installed globally
+- Firebase project setup
+
+### Clone the repository:
 
 ```bash
-npm run reset-project
+git clone https://github.com/yourusername/todo-app.git
+cd todo-app
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Install dependencies:
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Setup Firebase:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/).
+2. Add Firebase to your app by creating a new web app in the Firebase console.
+3. Copy the Firebase config into a new file named `firebaseConfig.js` in the root of the project.
 
-## Join the community
+```js
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 
-Join our community of developers creating universal apps.
+const firebaseConfig = {
+  apiKey: 'your-api-key',
+  authDomain: 'your-auth-domain',
+  projectId: 'your-project-id',
+  storageBucket: 'your-storage-bucket',
+  messagingSenderId: 'your-messaging-sender-id',
+  appId: 'your-app-id',
+};
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+```
+
+## Run the App
+Mobile (Expo Go):
+1. Start the development server:
+```bash
+npm start
+```
+2. Scan the QR code with your mobile device using the Expo Go app.  
+
+Web:
+1. Run the web version of the app:
+```bash
+npm run web
+```
+2. The app will open in your default browser.
+
+## Usage
+
+- **Add a List**: Tap the "Add List" button at the bottom to create a new list.
+- **Expand List**: Tap a list to expand and see its tasks.
+- **Add a Task**: Enter a task in the input field and press the "+" button to add it.
+- **Mark as Done**: Tap the circle next to a task to mark it as done.
+- **Edit a Task**: Tap the edit icon next to a task to modify its text.
+- **Delete a Task**: Tap the trash icon to delete a task, followed by a confirmation to finalize the deletion.
+- **Dark/Light Mode**: Toggle the theme using the switch at the top right corner. Your preference will be saved for future sessions.
+
+## Future Improvements
+
+- **Due Dates & Reminders**: Add due dates to tasks and enable reminders.
+- **Priority Levels**: Allow users to assign priority levels to tasks.
+- **Collaborative Lists**: Share lists with other users for collaborative task management.
+- **Recurring Tasks**: Enable tasks to repeat daily, weekly, or monthly.
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request for any changes or new features you'd like to see in the app.
