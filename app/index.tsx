@@ -1,3 +1,4 @@
+//index.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { db } from './firebaseConfig';
