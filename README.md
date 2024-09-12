@@ -40,7 +40,7 @@ To get started with the app on your local machine, follow these steps:
 ### Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/todo-app.git
+git clone https://github.com/yourusername/ToDo-mobile.git
 cd todo-app
 ```
 
@@ -77,16 +77,16 @@ export const db = getFirestore(app);
 Mobile (Expo Go):
 1. Start the development server:
 ```bash
-npm start
+npx expo start
 ```
 2. Scan the QR code with your mobile device using the Expo Go app.  
 
 Web:
 1. Run the web version of the app:
 ```bash
-npm run web
+npx expo start
 ```
-2. The app will open in your default browser.
+2. run http://localhost:8081/ in your web browser.
 
 ## Usage
 
