@@ -1,5 +1,4 @@
-//index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, FlatList, TextInput, Pressable, Switch, KeyboardAvoidingView, Platform } from 'react-native';
 import { db } from './firebaseConfig';
 import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
@@ -18,6 +17,9 @@ export default function ToDoApp() {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editedTaskText, setEditedTaskText] = useState('');
   const [taskToDelete, setTaskToDelete] = useState(null);
+
+  // Ref to manage auto-focus on TextInput
+  const inputRef = useRef(null);
 
   // Load theme preference from storage
   useEffect(() => {
@@ -101,6 +103,9 @@ export default function ToDoApp() {
   const startEditingTask = (task) => {
     setEditingTaskId(task.id);
     setEditedTaskText(task.name);
+    setTimeout(() => {
+      inputRef.current?.focus(); // Automatically focus on the TextInput after setting it to edit mode
+    }, 100); // Add a small delay to ensure the component is rendered before focusing
   };
 
   const saveEditedTask = async (listId, taskId) => {
@@ -162,14 +167,16 @@ export default function ToDoApp() {
                       style={[
                         currentStyles.taskRow,
                         taskToDelete === task.id && { backgroundColor: 'red' },
+                        editingTaskId === task.id && currentStyles.taskRowEdit // Apply edit styles
                       ]}
                     >
                       {editingTaskId === task.id ? (
                         <>
                           <TextInput
+                            ref={inputRef} // Attach the ref to the TextInput
                             value={editedTaskText}
                             onChangeText={setEditedTaskText}
-                            style={[currentStyles.taskName, { flex: 1 }]}
+                            style={[currentStyles.taskName, { flex: 1 }, currentStyles.taskNameEdit]}
                           />
                           <Pressable onPress={() => saveEditedTask(item.id, task.id)} style={{ marginLeft: 10 }}>
                             <AntDesign name="check" size={24} color="green" />

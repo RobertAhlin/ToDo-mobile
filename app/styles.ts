@@ -1,4 +1,3 @@
-//styles.ts
 import { StyleSheet } from 'react-native';
 
 export const lightStyles = StyleSheet.create({
@@ -44,14 +43,20 @@ export const lightStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 5,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#e0e0e0', // Default background for tasks
     padding: 10,
     borderRadius: 5,
+  },
+  taskRowEdit: {
+    backgroundColor: 'white', // Background when in edit mode
   },
   taskName: {
     fontSize: 16,
     marginLeft: 10,
-    color: 'black',
+    color: 'black', // Default text color
+  },
+  taskNameEdit: {
+    color: 'black', // Text color when in edit mode
   },
   taskDone: {
     textDecorationLine: 'line-through',
@@ -183,14 +188,20 @@ export const darkStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 5,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1a1a1a', // Default background for tasks in dark mode
     padding: 10,
     borderRadius: 5,
+  },
+  taskRowEdit: {
+    backgroundColor: 'white', // Background when in edit mode
   },
   taskName: {
     fontSize: 16,
     marginLeft: 10,
-    color: 'white',
+    color: 'white', // Default text color
+  },
+  taskNameEdit: {
+    color: 'black', // Text color when in edit mode
   },
   taskDone: {
     textDecorationLine: 'line-through',
