@@ -1,6 +1,6 @@
 // app/[instanceId].tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, TextInput, Pressable, Platform, Switch, KeyboardAvoidingView } from 'react-native';
+import { View, Text, FlatList, TextInput, Pressable, Platform, Switch, Modal, KeyboardAvoidingView, TouchableOpacity, Animated } from 'react-native';
 import { db } from '../firebaseConfig';
 import { collection, query, where, onSnapshot, addDoc, doc, updateDoc } from 'firebase/firestore';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
@@ -20,6 +20,8 @@ export default function ToDoApp() {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editedTaskText, setEditedTaskText] = useState('');
   const [taskToDelete, setTaskToDelete] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);  // State to handle the modal menu
+  const slideAnim = useRef(new Animated.Value(-1000)).current; // Animation state for sliding from the left
 
   const inputRef = useRef(null);
 
@@ -136,18 +138,89 @@ export default function ToDoApp() {
 
   const currentStyles = isDarkMode ? darkStyles : lightStyles;
 
+  // Handle opening the menu
+  const openMenu = () => {
+    setIsMenuOpen(true);
+    Animated.timing(slideAnim, {
+      toValue: 0,  // Slide to 0 from the left
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  // Handle closing the menu
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: -1000,  // Slide out to the left
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => setIsMenuOpen(false));
+  };
+
   return (
     <View style={currentStyles.container}>
-      {/* Header Section */}
-      <View style={currentStyles.header}>
-        <Text style={currentStyles.title}>Instance ID: {instanceId}</Text>
-        <Switch
-          value={isDarkMode}
-          onValueChange={(value) => setIsDarkMode(value)}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={isDarkMode ? '#f5dd4b' : '#f4f3f4'}
+      {/* Hamburger Menu Icon */}
+      <TouchableOpacity onPress={openMenu} style={{ padding: 10 }}>
+        <AntDesign name="menu-fold" size={24} color={isDarkMode ? 'white' : 'black'} />
+      </TouchableOpacity>
+
+      {/* Gray Transparent Background for Modal */}
+      {isMenuOpen && (
+        <Pressable
+          onPress={closeMenu}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',  // Semi-transparent background
+            zIndex: 998,
+          }}
         />
-      </View>
+      )}
+
+      {/* Menu Modal with Slide from Left */}
+      {isMenuOpen && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            left: slideAnim,
+            top: 0,
+            bottom: 0,
+            width: '95%',
+            height: '75%',
+            backgroundColor: isDarkMode ? '#333' : '#fff',
+            zIndex: 999,
+            borderRadius: 10,
+            padding: 20,
+            elevation: 10,
+            shadowColor: '#000',           // Add shadow to the modal
+            shadowOffset: { width: 0, height: 2 }, // iOS shadow properties
+            shadowOpacity: 0.8,
+            shadowRadius: 6,
+          }}
+        >
+          {/* Instance ID */}
+          <Text style={[currentStyles.title, { marginBottom: 20 }]}>ID: {instanceId}</Text>
+
+          {/* Dark Mode Switch */}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={currentStyles.title}>Dark Mode: </Text>
+            <Switch
+              value={isDarkMode}
+              onValueChange={(value) => setIsDarkMode(value)}
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={isDarkMode ? '#f5dd4b' : '#f4f3f4'}
+            />
+          </View>
+
+          {/* Close Menu Button */}
+          <Pressable onPress={closeMenu} style={{ marginTop: 20, padding: 10, backgroundColor: '#007AFF', borderRadius: 5, alignItems: 'center' }}>
+            <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Close</Text>
+          </Pressable>
+        </Animated.View>
+      )}
 
       {/* List and Task Rendering */}
       <FlatList
