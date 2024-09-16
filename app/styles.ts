@@ -1,3 +1,5 @@
+//app/styles.ts
+
 import { StyleSheet } from 'react-native';
 
 export const lightStyles = StyleSheet.create({
@@ -121,21 +123,25 @@ export const lightStyles = StyleSheet.create({
     paddingVertical: 10,
     borderTopWidth: 1,
     borderColor: '#ccc',
-  },
-  newTaskInput: {
+    // Add flex to make sure the input and button align correctly
     flex: 1,
+  },
+  
+  newTaskInput: {
+    flex: 1, // Ensure the input takes up available space
     borderWidth: 1,
     padding: 10,
-    marginRight: 10,
+    marginRight: 10, // Add some margin to the right of the input
     borderRadius: 5,
     borderColor: '#ccc',
     color: 'black',
   },
+  
   newTaskButton: {
     backgroundColor: 'blue',
     padding: 10,
     borderRadius: 5,
-    width: 40,
+    width: 40, // Set width for the button
     alignItems: 'center',
   },
   newTaskButtonText: {

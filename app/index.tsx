@@ -1,264 +1,145 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, FlatList, TextInput, Pressable, Switch, KeyboardAvoidingView, Platform } from 'react-native';
-import { db } from './firebaseConfig';
-import { collection, onSnapshot, doc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
-import { AntDesign, MaterialIcons } from '@expo/vector-icons';
-import { lightStyles, darkStyles } from './styles';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// app/index.tsx
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, FlatList, Pressable, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { collection, addDoc, getDocs, doc, setDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
-const isWeb = Platform.OS === 'web';
+export default function HomeScreen() {
+  const [newInstanceName, setNewInstanceName] = useState('');
+  const [joinInstanceCode, setJoinInstanceCode] = useState('');
+  const [userInstances, setUserInstances] = useState([]);
+  const userId = "currentUserId"; // Replace with actual userId from authentication
+  const router = useRouter();
 
-export default function ToDoApp() {
-  const [lists, setLists] = useState([]);
-  const [expandedList, setExpandedList] = useState(null);
-  const [newListName, setNewListName] = useState('');
-  const [newTask, setNewTask] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [editingTaskId, setEditingTaskId] = useState(null);
-  const [editedTaskText, setEditedTaskText] = useState('');
-  const [taskToDelete, setTaskToDelete] = useState(null);
-
-  // Ref to manage auto-focus on TextInput
-  const inputRef = useRef(null);
-
-  // Load theme preference from storage
+  // Fetch instances that the user created or joined
   useEffect(() => {
-    const loadThemePreference = async () => {
-      try {
-        if (isWeb) {
-          const savedTheme = localStorage.getItem('theme');
-          if (savedTheme !== null) setIsDarkMode(savedTheme === 'dark');
-        } else {
-          const savedTheme = await AsyncStorage.getItem('theme');
-          if (savedTheme !== null) setIsDarkMode(savedTheme === 'dark');
-        }
-      } catch (error) {
-        console.log('Error loading theme preference:', error);
-      }
-    };
-    loadThemePreference();
-  }, []);
-
-  // Save theme preference
-  useEffect(() => {
-    const saveThemePreference = async () => {
-      try {
-        if (isWeb) {
-          localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-        } else {
-          await AsyncStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
-        }
-      } catch (error) {
-        console.log('Error saving theme preference:', error);
-      }
-    };
-    saveThemePreference();
-  }, [isDarkMode]);
-
-  // Fetch lists from Firestore
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, 'lists'), (snapshot) => {
-      const fetchedLists = snapshot.docs.map(doc => ({
+    const fetchUserInstances = async () => {
+      const userDocRef = doc(db, 'users', userId);
+      const instancesSnapshot = await getDocs(collection(userDocRef, 'instances'));
+      const instances = instancesSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setLists(fetchedLists);
-    });
-    return () => unsubscribe();
+      setUserInstances(instances);
+    };
+    fetchUserInstances();
   }, []);
 
-  // Add a new list
-  const addList = async () => {
-    if (newListName.trim() !== '') {
-      await addDoc(collection(db, 'lists'), { name: newListName, tasks: [] });
-      setNewListName('');
+  // Handle creating a new instance
+  const createInstance = async () => {
+    if (newInstanceName.trim() === '') return;
+
+    try {
+      const newInstanceId = Date.now().toString(); // Generate a unique instance ID
+      const newInstanceRef = doc(collection(db, 'instances'), newInstanceId);
+      await setDoc(newInstanceRef, {
+        name: newInstanceName,
+        createdAt: new Date(),
+        userId,
+      });
+
+      const userDocRef = doc(db, 'users', userId);
+      await setDoc(doc(collection(userDocRef, 'instances'), newInstanceId), {
+        instanceName: newInstanceName,
+        instanceId: newInstanceId,
+      });
+
+      router.push(`/${newInstanceId}`); // Navigate to the new instance
+    } catch (error) {
+      console.error('Error creating instance:', error);
     }
   };
 
-  // Add a new task
-  const addTaskToList = async (listId) => {
-    if (newTask.trim() !== '') {
-      const listRef = doc(db, 'lists', listId);
-      const list = lists.find(list => list.id === listId);
-      const updatedTasks = [...list.tasks, { id: Date.now().toString(), name: newTask, isDone: false }];
-      await updateDoc(listRef, { tasks: updatedTasks });
-      setNewTask('');
+  // Handle joining an existing instance
+  const joinInstance = async () => {
+    if (joinInstanceCode.trim() === '') return;
+
+    try {
+      const instanceRef = doc(db, 'instances', joinInstanceCode);
+      const docSnap = await getDocs(instanceRef);
+
+      if (!docSnap.exists()) {
+        alert('Instance does not exist!');
+        return;
+      }
+
+      const userDocRef = doc(db, 'users', userId);
+      await setDoc(doc(collection(userDocRef, 'instances'), joinInstanceCode), {
+        instanceName: docSnap.data().name,
+        instanceId: joinInstanceCode,
+      });
+
+      router.push(`/${joinInstanceCode}`);
+    } catch (error) {
+      console.error('Error joining instance:', error);
     }
   };
 
-  // Toggle task done
-  const toggleTaskDone = async (listId, taskId) => {
-    const listRef = doc(db, 'lists', listId);
-    const list = lists.find(list => list.id === listId);
-    const updatedTasks = list.tasks.map(task => task.id === taskId ? { ...task, isDone: !task.isDone } : task);
-    await updateDoc(listRef, { tasks: updatedTasks });
+  // Handle selecting an instance
+  const handleSelectInstance = (instanceId) => {
+    router.push(`/${instanceId}`);
   };
-
-  // Toggle expand/collapse a list
-  const toggleExpandList = (listId) => {
-    setExpandedList(expandedList === listId ? null : listId);
-  };
-
-  // Edit a task
-  const startEditingTask = (task) => {
-    setEditingTaskId(task.id);
-    setEditedTaskText(task.name);
-    setTimeout(() => {
-      inputRef.current?.focus(); // Automatically focus on the TextInput after setting it to edit mode
-    }, 100); // Add a small delay to ensure the component is rendered before focusing
-  };
-
-  const saveEditedTask = async (listId, taskId) => {
-    const listRef = doc(db, 'lists', listId);
-    const list = lists.find(list => list.id === listId);
-    const updatedTasks = list.tasks.map(task => task.id === taskId ? { ...task, name: editedTaskText } : task);
-    await updateDoc(listRef, { tasks: updatedTasks });
-    setEditingTaskId(null);
-  };
-
-  // Start task deletion
-  const confirmDeleteTask = (taskId) => {
-    setTaskToDelete(taskId);
-  };
-
-  // Cancel task deletion
-  const cancelDeleteTask = () => {
-    setTaskToDelete(null);
-  };
-
-  const deleteTask = async (listId, taskId) => {
-    const listRef = doc(db, 'lists', listId);
-    const list = lists.find(list => list.id === listId);
-    const updatedTasks = list.tasks.filter(task => task.id !== taskId);
-    await updateDoc(listRef, { tasks: updatedTasks });
-    setTaskToDelete(null);
-  };
-
-  const currentStyles = isDarkMode ? darkStyles : lightStyles;
 
   return (
-    <View style={currentStyles.container}>
-      <View style={currentStyles.header}>
-        <Text style={currentStyles.title}>ToDo</Text>
-        <Switch
-          value={isDarkMode}
-          onValueChange={(value) => setIsDarkMode(value)}
-          trackColor={{ false: '#767577', true: '#81b0ff' }}
-          thumbColor={isDarkMode ? '#f5dd4b' : '#f4f3f4'}
-        />
-      </View>
+    <View style={styles.container}>
+      <Text style={styles.title}>Create a New Instance</Text>
+      <TextInput
+        style={styles.input}
+        value={newInstanceName}
+        onChangeText={setNewInstanceName}
+        placeholder="Enter instance name"
+      />
+      <Button title="Create Instance" onPress={createInstance} />
 
+      <Text style={styles.title}>Join an Existing Instance</Text>
+      <TextInput
+        style={styles.input}
+        value={joinInstanceCode}
+        onChangeText={setJoinInstanceCode}
+        placeholder="Enter instance code"
+      />
+      <Button title="Join Instance" onPress={joinInstance} />
+
+      <Text style={styles.title}>Your Instances</Text>
       <FlatList
-        data={lists}
+        data={userInstances}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={currentStyles.listItem}>
-            <Pressable onPress={() => toggleExpandList(item.id)} style={currentStyles.listButton}>
-              <Text style={currentStyles.listName}>{item.name}</Text>
-            </Pressable>
-
-            {expandedList === item.id && (
-              <View style={currentStyles.taskContainer}>
-                <FlatList
-                  data={item.tasks.sort((a, b) => a.isDone - b.isDone)}
-                  keyExtractor={(task) => task.id}
-                  renderItem={({ item: task }) => (
-                    <View
-                      style={[
-                        currentStyles.taskRow,
-                        taskToDelete === task.id && { backgroundColor: 'red' },
-                        editingTaskId === task.id && currentStyles.taskRowEdit // Apply edit styles
-                      ]}
-                    >
-                      {editingTaskId === task.id ? (
-                        <>
-                          <TextInput
-                            ref={inputRef} // Attach the ref to the TextInput
-                            value={editedTaskText}
-                            onChangeText={setEditedTaskText}
-                            style={[currentStyles.taskName, { flex: 1 }, currentStyles.taskNameEdit]}
-                          />
-                          <Pressable onPress={() => saveEditedTask(item.id, task.id)} style={{ marginLeft: 10 }}>
-                            <AntDesign name="check" size={24} color="green" />
-                          </Pressable>
-                        </>
-                      ) : (
-                        <>
-                          <Pressable
-                            onPress={() => toggleTaskDone(item.id, task.id)}
-                            style={[
-                              currentStyles.checkButton,
-                              task.isDone && currentStyles.checkButtonDone,
-                            ]}
-                          >
-                            {task.isDone && <AntDesign name="check" size={16} color="white" />}
-                          </Pressable>
-                          <Text style={[currentStyles.taskName, task.isDone && currentStyles.taskDone]}>
-                            {task.name}
-                          </Text>
-                          <Pressable onPress={() => startEditingTask(task)} style={{ marginLeft: 'auto' }}>
-                            <AntDesign name="edit" size={24} color="gray" />
-                          </Pressable>
-                          <Pressable onPress={() => confirmDeleteTask(task.id)} style={{ marginLeft: 10 }}>
-                            <MaterialIcons name="delete" size={24} color="darkred" />
-                          </Pressable>
-                        </>
-                      )}
-
-                      {taskToDelete === task.id && (
-                        <View style={{ flexDirection: 'row', marginLeft: 10 }}>
-                          <Pressable
-                            onPress={() => deleteTask(item.id, task.id)}
-                            style={{ backgroundColor: 'white', padding: 5, borderRadius: 5, marginRight: 5 }}
-                          >
-                            <Text style={{ color: 'red' }}>Delete</Text>
-                          </Pressable>
-                          <Pressable
-                            onPress={cancelDeleteTask}
-                            style={{ backgroundColor: 'white', padding: 5, borderRadius: 5 }}
-                          >
-                            <Text style={{ color: 'black' }}>Cancel</Text>
-                          </Pressable>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                />
-
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={currentStyles.newTaskFooter}>
-                  <View style={currentStyles.newTaskFooterContent}>
-                    <TextInput
-                      style={currentStyles.newTaskInput}
-                      placeholder="New task"
-                      placeholderTextColor={isDarkMode ? '#ccc' : '#888'}
-                      value={newTask}
-                      onChangeText={setNewTask}
-                    />
-                    <Pressable onPress={() => addTaskToList(item.id)} style={currentStyles.newTaskButton}>
-                      <Text style={currentStyles.newTaskButtonText}>+</Text>
-                    </Pressable>
-                  </View>
-                </KeyboardAvoidingView>
-              </View>
-            )}
-          </View>
+          <Pressable onPress={() => handleSelectInstance(item.id)} style={styles.instanceButton}>
+            <Text style={styles.instanceText}>{item.instanceName}</Text>
+          </Pressable>
         )}
       />
-
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={currentStyles.footer}>
-        <View style={currentStyles.footerContent}>
-          <TextInput
-            style={currentStyles.footerInput}
-            placeholder="New list name"
-            placeholderTextColor={isDarkMode ? '#ccc' : '#888'}
-            value={newListName}
-            onChangeText={setNewListName}
-          />
-          <Pressable onPress={addList} style={currentStyles.footerButton}>
-            <Text style={currentStyles.footerButtonText}>Add List</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 10,
+  },
+  input: {
+    borderWidth: 1,
+    padding: 10,
+    marginVertical: 10,
+    borderRadius: 5,
+    borderColor: '#ccc',
+  },
+  instanceButton: {
+    padding: 15,
+    backgroundColor: '#eee',
+    marginVertical: 5,
+    borderRadius: 5,
+  },
+  instanceText: {
+    fontSize: 16,
+  },
+});
